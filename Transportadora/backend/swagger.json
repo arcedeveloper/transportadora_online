@@ -1,0 +1,454 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "Transportadora API",
+    "description": "API REST para el sistema de gestión de transporte de la tesis.",
+    "version": "1.0.0"
+  },
+  "basePath": "/api",
+  "schemes": [
+    "http"
+  ],
+  "paths": {
+    "/auth/login": {
+      "post": {
+        "summary": "Inicia sesión y obtiene un token JWT",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "correo": {
+                  "type": "string"
+                },
+                "contraseña": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "correo",
+                "contraseña"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Login exitoso",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "token": {
+                  "type": "string"
+                },
+                "rol": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/empresas": {
+      "post": {
+        "summary": "Registra una nueva empresa (solo para administradores)",
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "nombre_empresa": {
+                  "type": "string"
+                },
+                "cantidad_camiones": {
+                  "type": "integer"
+                },
+                "correo_electronico": {
+                  "type": "string"
+                },
+                "contraseña": {
+                  "type": "string"
+                },
+                "telefono": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "nombre_empresa",
+                "cantidad_camiones"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Empresa registrada exitosamente"
+          }
+        }
+      }
+    },
+    "/empresas/{id}": {
+      "get": {
+        "summary": "Obtiene los detalles de una empresa por ID (solo para administradores)",
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Detalles de la empresa",
+            "schema": {
+              "$ref": "#/definitions/Empresa"
+            }
+          },
+          "404": {
+            "description": "Empresa no encontrada"
+          }
+        }
+      }
+    },
+    "/pedidos": {
+      "post": {
+        "summary": "Crea un nuevo pedido (solo para administradores o transportistas)",
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "nombre_cliente": {
+                  "type": "string"
+                },
+                "telefono": {
+                  "type": "string"
+                },
+                "email": {
+                  "type": "string"
+                },
+                "ciudad_origen": {
+                  "type": "string"
+                },
+                "ciudad_destino": {
+                  "type": "string"
+                },
+                "fecha_envio": {
+                  "type": "string",
+                  "format": "date"
+                },
+                "tipo_carga": {
+                  "type": "string"
+                },
+                "detalles": {
+                  "type": "string"
+                },
+                "estado": {
+                  "type": "string"
+                },
+                "id_transportista": {
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "nombre_cliente",
+                "email",
+                "ciudad_origen",
+                "ciudad_destino"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Pedido creado exitosamente"
+          }
+        }
+      },
+      "get": {
+        "summary": "Lista todos los pedidos (solo para administradores)",
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de pedidos",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Pedido"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/pedidos/{id}/estado": {
+      "put": {
+        "summary": "Actualiza el estado de un pedido por ID (solo para transportistas o administradores)",
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "estado": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "estado"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Estado del pedido actualizado"
+          }
+        }
+      }
+    },
+    "/ubicaciones": {
+      "post": {
+        "summary": "Guarda la ubicación en tiempo real de un transportista (solo para transportistas)",
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "latitud": {
+                  "type": "number",
+                  "format": "float"
+                },
+                "longitud": {
+                  "type": "number",
+                  "format": "float"
+                },
+                "id_pedido": {
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "latitud",
+                "longitud",
+                "id_pedido"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Ubicación guardada exitosamente"
+          }
+        }
+      }
+    },
+    "/ubicaciones/{pedidoId}": {
+      "get": {
+        "summary": "Obtiene la última ubicación de un pedido por ID (solo para administradores o empresas)",
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "pedidoId",
+            "in": "path",
+            "required": true,
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Última ubicación del pedido",
+            "schema": {
+              "$ref": "#/definitions/Ubicacion"
+            }
+          },
+          "404": {
+            "description": "Ubicación no encontrada"
+          }
+        }
+      }
+    }
+  },
+  "securityDefinitions": {
+    "Bearer": {
+      "type": "apiKey",
+      "name": "Authorization",
+      "in": "header"
+    }
+  },
+  "definitions": {
+    "Empresa": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer"
+        },
+        "nombre_empresa": {
+          "type": "string"
+        },
+        "cantidad_camiones": {
+          "type": "integer"
+        },
+        "correo_electronico": {
+          "type": "string"
+        },
+        "telefono": {
+          "type": "string"
+        },
+        "fecha": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "Pedido": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer"
+        },
+        "nombre_cliente": {
+          "type": "string"
+        },
+        "telefono": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        },
+        "ciudad_origen": {
+          "type": "string"
+        },
+        "ciudad_destino": {
+          "type": "string"
+        },
+        "fecha_envio": {
+          "type": "string",
+          "format": "date"
+        },
+        "tipo_carga": {
+          "type": "string"
+        },
+        "detalles": {
+          "type": "string"
+        },
+        "estado": {
+          "type": "string"
+        },
+        "id_transportista": {
+          "type": "integer"
+        }
+      }
+    },
+    "Ubicacion": {
+      "type": "object",
+      "properties": {
+        "latitud": {
+          "type": "number",
+          "format": "float"
+        },
+        "longitud": {
+          "type": "number",
+          "format": "float"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    }
+  }
+}
