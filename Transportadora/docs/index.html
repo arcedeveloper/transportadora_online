@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Transportadora Online - Plataforma de Transporte</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Symbols+Rounded" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: #222;
+            color: #eee;
+            line-height: 1.6;
+            transition: background 0.3s ease, color 0.3s ease;
+        }
+        body.dark {
+            background: #fff;
+            color: #222;
+        }
+        a {
+            color: #00c6ff;
+            text-decoration: none;
+            transition: color 0.3s ease;
+            cursor: pointer;
+        }
+        a:hover {
+            color: #007aab;
+        }
+        header {
+            background: #111;
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        header .logo {
+            font-weight: 600; 
+            font-size: 1.5rem;
+            letter-spacing: 2px;
+        }
+        nav {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+        nav a {
+            font-weight: 500; 
+            font-size: 1rem;
+        }
+        #menuToggle {
+            display: none;
+            flex-direction: column;
+            cursor: pointer;
+            width: 25px;
+            height: 20px;
+            justify-content: space-between;
+        }
+        #menuToggle span {
+            background: white;
+            height: 3px;
+            border-radius: 2px;
+            transition: 0.3s;
+        }
+        nav.mobile {
+            display: none;
+            flex-direction: column;
+            position: absolute;
+            background: #111;
+            top: 60px;
+            right: 20px;
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+        }
+        nav.mobile a {
+            margin: 0.5rem 0;
+            font-size: 1.1rem;
+        }
+        nav.mobile.active {
+            display: flex;
+        }
+
+        .hero {
+            background: linear-gradient(90deg, rgba(0, 0, 0, 0.85), rgba(80, 88, 91, 0.6)), url('/img/pexels-mikebirdy-13520550.jpg') no-repeat center/cover;
+            height: 90vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 0 3rem;
+            color: rgb(255, 255, 255);
+            text-shadow: 1px 1px 6px rgba(0, 0, 0, 0.7);
+        }
+        body.dark .hero {
+            background: linear-gradient(90deg, rgba(52, 55, 55, 0.85), rgba(80, 88, 91, 0.6)), url('/img/pexels-mikebirdy-13520550.jpg') no-repeat center/cover;
+            color: #c6c6c6;
+            text-shadow: none;
+        }
+        .hero h1 {
+            font-size: 3.5rem;
+            max-width: 600px;
+            margin-bottom: 1rem;
+            font-weight: 600; 
+        }
+        .hero p {
+            font-size: 1.25rem;
+            max-width: 450px;
+            margin-bottom: 2rem;
+            font-weight: 400;
+        }
+        .btn-primary {
+            background: #00c6ff;
+            color: #111;
+            padding: 0.9rem 2rem;
+            font-weight: 500; 
+            font-size: 1.1rem;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(27, 132, 160, 0.4);
+            transition: background 0.3s ease;
+        }
+        .btn-primary:hover {
+            background: #007aab;
+            color: white;
+            box-shadow: 0 8px 20px rgba(0, 122, 171, 0.7);
+        }
+
+        .beneficios {
+            padding: 4rem 2rem;
+            max-width: 1100px;
+            margin: auto;
+            display: flex;
+            justify-content: space-around;
+            gap: 2rem;
+            flex-wrap: wrap;
+            text-align: center;
+            color: #eee;
+        }
+        body.dark .beneficios {
+            color: #222;
+        }
+        .beneficio-item {
+            flex: 1 1 250px;
+            background: #333;
+            border-radius: 15px;
+            padding: 2rem 1.5rem;
+            box-shadow: 0 5px 15px rgba(0, 198, 255, 0.15);
+            transition: transform 0.3s ease, background 0.3s ease;
+        }
+        body.dark .beneficio-item {
+            background: #f0f8ff;
+            box-shadow: 0 5px 15px rgba(0, 122, 171, 0.15);
+        }
+        .beneficio-item:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 10px 30px rgba(0, 198, 255, 0.3);
+        }
+        .beneficio-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            color: #00c6ff;
+        }
+        .beneficio-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        .beneficio-desc {
+            font-size: 1rem;
+            color: #bbb;
+            font-weight: 400;
+        }
+        body.dark .beneficio-desc {
+            color: #555;
+        }
+        .registro {
+            background: #4a5d64;
+            padding: 3rem 2rem;
+            color: #111;
+            text-align: center;
+        }
+        body.dark .registro {
+            background: #7baebe;
+            color: #fff;
+        }
+        .registro h2 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            font-weight: 600;
+            text-shadow: 0 1px 5px rgba(0, 0, 0, 0.3);
+        }
+        .registro form {
+            max-width: 450px;
+            margin: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        .registro input,
+        .registro select {
+            padding: 0.9rem 1rem;
+            border-radius: 30px;
+            border: none;
+            font-size: 1rem;
+            outline: none;
+            transition: box-shadow 0.3s ease;
+            font-weight: 400;
+        }
+        .registro input:focus,
+        .registro select:focus {
+            box-shadow: 0 0 8px 2px #005f8a;
+        }
+        .input-group {
+            position: relative;
+            width: 100%;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 0.9rem 1rem;
+            padding-right: 45px;
+            border-radius: 30px;
+            border: none;
+            font-size: 1rem;
+            outline: none;
+            transition: box-shadow 0.3s ease;
+            font-weight: 400;
+        }
+
+        .input-group input:focus {
+            box-shadow: 0 0 8px 2px #005f8a;
+        }
+
+        .password-toggle-icon {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #666;
+            font-size: 20px;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        body.dark .password-toggle-icon {
+            color: #999;
+        }
+
+        body.dark .password-toggle-icon:hover {
+            color: #ccc;
+        }
+        
+        .registro button {
+            margin-top: 1rem;
+            background: #00c6ff;
+            color: #111;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 30px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1.1rem;
+            box-shadow: 0 5px 15px rgba(0, 198, 255, 0.4);
+        }
+        .registro button:hover {
+            background: #007aab;
+            color: white;
+            box-shadow: 0 8px 20px rgba(0, 122, 171, 0.7);
+            transform: translateY(-2px);
+        }
+        .error-msg {
+            font-size: 0.85rem;
+            color: #ff5555;
+            text-align: left;
+            margin-top: -0.6rem;
+            margin-bottom: 0.5rem;
+            min-height: 18px;
+            font-weight: 400;
+        }
+        #formFeedback {
+            margin-top: 1rem;
+            font-weight: 600;
+            min-height: 22px;
+        }
+
+        .testimonials {
+            max-width: 800px;
+            margin: 4rem auto;
+            color: #eee;
+            text-align: center;
+            position: relative;
+        }
+        body.dark .testimonials {
+            color: #222;
+        }
+        .testimonial-item {
+            display: none;
+            padding: 1rem 2rem;
+            background: #333;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0, 198, 255, 0.15);
+            transition: background 0.3s ease;
+        }
+        body.dark .testimonial-item {
+            background: #f0f8ff;
+            box-shadow: 0 5px 15px rgba(0, 122, 171, 0.15);
+        }
+        .testimonial-item.active {
+            display: block;
+        }
+        .testimonial-text {
+            font-style: italic;
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+            line-height: 1.4;
+            color: #00c6ff;
+            font-weight: 400;
+        }
+        .testimonial-author {
+            font-weight: 500;
+            font-size: 1rem;
+            color: #ccc;
+        }
+        body.dark .testimonial-author {
+            color: #007aab;
+        }
+        .testimonial-controls {
+            margin-top: 1rem;
+        }
+        .testimonial-controls button {
+            background: #00c6ff;
+            border: none;
+            margin: 0 5px;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            cursor: pointer;
+            opacity: 0.6;
+            transition: opacity 0.3s ease;
+        }
+        .testimonial-controls button.active {
+            opacity: 1;
+            box-shadow: 0 0 10px #00c6ff;
+        }
+        .testimonial-controls button:hover {
+            opacity: 1;
+        }
+
+        .faq {
+            max-width: 800px;
+            margin: 4rem auto;
+            color: #eee;
+        }
+        body.dark .faq {
+            color: #222;
+        }
+        .faq-item {
+            background: #333;
+            margin-bottom: 1rem;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0, 198, 255, 0.15);
+            transition: background 0.3s ease;
+        }
+        body.dark .faq-item {
+            background: #f0f8ff;
+            box-shadow: 0 5px 15px rgba(0, 122, 171, 0.15);
+        }
+        .faq-question {
+            cursor: pointer;
+            padding: 1rem 1.5rem;
+            font-weight: 500;
+            position: relative;
+            user-select: none;
+            font-size: 1.1rem;
+            width: 100%;
+            text-align: left;
+            background: none;
+            border: none;
+            color: inherit;
+        }
+        .faq-question::after {
+            content: "+";
+            position: absolute;
+            right: 1.5rem;
+            font-size: 1.5rem;
+            transition: transform 0.3s ease;
+        }
+        .faq-item.active .faq-question::after {
+            content: "-";
+            transform: rotate(180deg);
+        }
+        .faq-answer {
+            padding: 0 1.5rem 1.5rem 1.5rem;
+            font-weight: 400;
+            font-size: 1rem;
+            display: none;
+        }
+        .faq-item.active .faq-answer {
+            display: block;
+        }
+
+        .contacto {
+            background: #111;
+            color: #eee;
+            padding: 3rem 2rem;
+            text-align: center;
+        }
+        body.dark .contacto {
+            background: #eee;
+            color: #222;
+        }
+        .contacto h2 {
+            margin-bottom: 1rem;
+            font-weight: 600;
+            font-size: 2rem;
+        }
+        .contacto p {
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+            font-weight: 400;
+        }
+        .social-icons {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        .social-icons a {
+            color: #00c6ff;
+            font-size: 2rem;
+            transition: color 0.3s ease;
+        }
+        .social-icons a:hover {
+            color: #007aab;
+        }
+        .map-container {
+            display: flex;
+            justify-content: center;
+        }
+        .map-container iframe {
+            border: 0;
+            width: 100%;
+            max-width: 600px;
+            height: 300px;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0, 198, 255, 0.3);
+            margin: auto;
+        }
+
+        footer {
+            background: #111;
+            color: #888;
+            text-align: center;
+            padding: 1rem;
+            font-size: 0.9rem;
+            user-select: none;
+            font-weight: 400;
+        }
+        body.dark footer {
+            background: #eee;
+            color: #444;
+        }
+
+        
+        #darkModeToggle {
+            background: none;
+            border: 2px solid #00c6ff;
+            border-radius: 30px;
+            color: #00c6ff;
+            font-weight: 600;
+            padding: 0.3rem 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-left: 1rem;
+        }
+        #darkModeToggle:hover {
+            background: #00c6ff;
+            color: #111;
+        }
+        #mapModal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .map-modal-content {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            width: 95%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        #miniMap {
+            height: 400px;
+            width: 100%;
+            border-radius: 8px;
+            border: 2px solid #00c6ff;
+        }
+
+        .map-buscar {
+            margin-bottom: 1rem;
+        }
+
+        .map-buscar input {
+            width: 100%;
+            padding: 0.7rem;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+
+        .map-buscar button {
+            margin-top: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: #00c6ff;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            cursor: pointer;
+        }
+
+        .map-botones {
+            margin-top: 1rem;
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+
+        .map-botones button {
+            padding: 0.7rem 1.5rem;
+            border: none;
+            border-radius: 25px;
+            color: white;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        #mapInfo {
+            margin-top: 1rem;
+            padding: 0.5rem;
+            background: #f0f8ff;
+            border-radius: 5px;
+            font-size: 0.8rem;
+            color: #007aab;
+            display: none;
+        }
+
+        .btn-mapa {
+            background: transparent;
+            border: 1px dashed #00c6ff;
+            color: #00c6ff;
+            padding: 0.5rem 1rem;
+            border-radius: 30px;
+            cursor: pointer;
+            margin-top: 0.5rem;
+            font-size: 0.9rem;
+            width: 100%;
+        }
+
+        @media (max-width: 768px) {
+            nav.desktop {
+                display: none;
+            }
+            #menuToggle {
+                display: flex;
+            }
+            .hero {
+                align-items: center;
+                padding: 0 1.5rem;
+                text-align: center;
+            }
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+            .hero p {
+                max-width: 100%;
+                font-size: 1.1rem;
+            }
+            .beneficios {
+                flex-direction: column;
+                align-items: center;
+            }
+            .beneficio-item {
+                max-width: 350px;
+            }
+        }
+.ubicacion-simple {
+    margin-bottom: 1rem;
+}
+
+.ubicacion-simple input[readonly] {
+    background: #f8f8f8 !important;
+    cursor: pointer !important;
+}
+
+body.dark .ubicacion-simple input[readonly] {
+    background: #333 !important;
+    color: #eee !important;
+}
+.campo-ubicacion {
+    background: #f8f8f8 !important;
+    cursor: pointer !important;
+    width: 100%;
+    padding: 0.9rem 1rem;
+    border-radius: 30px;
+    border: none;
+    font-size: 1rem;
+    outline: none;
+    transition: box-shadow 0.3s ease;
+    font-weight: 400;
+    margin-bottom: 0.5rem;
+}
+
+.campo-ubicacion:focus {
+    box-shadow: 0 0 8px 2px #005f8a;
+}
+
+body.dark .campo-ubicacion {
+    background: #333 !important;
+    color: #eee !important;
+}
+
+.campo-ubicacion {
+    position: relative;
+}
+
+.campo-ubicacion::after {
+    content: "🗺️";
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1.2rem;
+    pointer-events: none;
+}
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">Transportadora Online</div>
+        <nav class="desktop">
+            <a href="login.html">Iniciar Sesión</a>
+            <a href="login-admin.html">Administración</a>
+            <a href="#contacto">Contacto</a>
+            <button id="darkModeToggle" aria-label="Toggle Dark Mode">Modo Oscuro</button>
+        </nav>
+        <div id="menuToggle" aria-label="Menú móvil" aria-expanded="false" role="button" tabindex="0">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+        <nav class="mobile" aria-label="Menú navegación móvil">
+            <a href="login.html">Iniciar Sesión</a>
+            <a href="administrador.html">Administracion</a>
+            <a href="#contacto">Contacto</a>
+            <button id="darkModeToggleMobile" aria-label="Toggle Dark Mode">Modo Oscuro</button>
+        </nav>
+    </header>
+
+    <main>
+        <section class="hero" role="banner">
+            <h1>Optimiza Tu Logística Y Transporte Con Tecnología</h1>
+            <p>Conecta tu empresa con transportistas confiables y mejora tus envíos al instante.</p>
+            <button class="btn-primary" onclick="document.getElementById('registro').scrollIntoView({behavior:'smooth'})">Regístrate Ahora</button>
+        </section>
+
+        <section id="beneficios" class="beneficios" aria-label="Beneficios de la plataforma">
+            <article class="beneficio-item" tabindex="0">
+                <div class="beneficio-icon">🛡️</div>
+                <h3 class="beneficio-title">Seguridad Garantizada</h3>
+                <p class="beneficio-desc">Transportistas controlados, seguros de carga y seguimiento 24/7 para tu total tranquilidad.</p>
+            </article>
+            <article class="beneficio-item" tabindex="0">
+                <div class="beneficio-icon">📊</div>
+                <h3 class="beneficio-title">Control Total de Operaciones</h3>
+                <p class="beneficio-desc">Gestiona y supervisa todo movimiento desde un solo panel.</p>
+            </article>
+            <article class="beneficio-item" tabindex="0">
+                <div class="beneficio-icon">💸</div>
+                <h3 class="beneficio-title">Reducción de Costos Operativos</h3>
+                <p class="beneficio-desc">Elimina intermediarios y optimiza gastos logísticos con tarifas transparentes.</p>
+            </article>
+        </section>
+
+      <section id="registro" class="registro" aria-label="Formulario de registro para empresas">
+    <h2>Regístrate Y Empieza A Optimizar Tu Transporte</h2>
+    <form id="registroForm" novalidate autocomplete="off">
+        <input type="text" id="nombre_empresa" name="nombre_empresa" placeholder="Nombre de la empresa" required aria-required="true" autocomplete="off" />
+        <div class="error-msg" id="errorNombreEmpresa"></div>
+
+        <input type="text" id="nombre_titular" name="nombre_titular" placeholder="Nombre Completo Del titular" required aria-required="true" autocomplete="off" />
+        <div class="error-msg" id="errorNombreTitular"></div>
+
+        <input type="text" id="ruc" name="ruc" placeholder="Ruc" required aria-required="true" autocomplete="off" />
+        <div class="error-msg" id="errorCedulaRuc"></div>
+            
+        <input type="text" id="ubicacion" name="ubicacion" placeholder="Click para seleccionar tu Ubicacion o Sede " required readonly class="campo-ubicacion" />
+        <div class="error-msg" id="errorUbicacion"></div>
+
+        <input type="hidden" id="latitud" name="latitud">
+        <input type="hidden" id="longitud" name="longitud">
+
+        <input type="email" id="correo_electronico" name="correo_electronico" placeholder="Correo Electrónico" required aria-required="true" autocomplete="off" />
+        <div class="error-msg" id="errorCorreo"></div>
+
+        <div class="input-group">
+            <input type="password" id="contraseña" name="contrasena_registro" placeholder="Contraseña" required autocomplete="new-password" />
+            <span class="material-symbols-rounded password-toggle-icon" id="passwordToggle">visibility_off</span>
+        </div>
+        <div class="error-msg" id="errorContraseña"></div>
+
+        <input type="tel" id="telefono" name="telefono" placeholder="Teléfono" pattern="^\+?\d{7,15}$" required aria-required="true" autocomplete="off" />
+        <div class="error-msg" id="errorTelefono"></div>
+        
+        <button type="submit">Enviar</button>
+        <div id="formFeedback" role="alert" aria-live="polite"></div>
+    </form>
+</section>
+<div id="mapModal">
+    <div class="map-modal-content">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h3 style="color: #222; margin: 0;"> Selecciona tu ubicación exacta</h3>
+            <button onclick="cerrarMapa()" style="background: #ff4444; color: white; border: none; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; font-size: 1.2rem;">×</button>
+        </div>
+        
+        <div class="map-buscar">
+            <input type="text" id="buscarDireccion" placeholder="Buscar dirección, ciudad o barrio...">
+            <button onclick="buscarEnMapa()" style="background: #00c6ff; color: white; border: none; padding: 0.7rem 1rem; border-radius: 8px; cursor: pointer; font-weight: 500;">Buscar</button>
+        </div>
+        <div id="miniMap"></div>
+        <div id="direccionEncontrada" style="display: none; margin: 1rem 0; padding: 0.8rem; background: #f0f8ff; border-radius: 8px; border-left: 4px solid #00c6ff;">
+            <div style="color: #007aab; font-weight: 500; font-size: 0.9rem;">📍 Dirección seleccionada:</div>
+            <div style="color: #333; font-size: 0.85rem; margin-top: 0.3rem;" id="textoDireccion"></div>
+        </div>
+        
+        <div class="map-botones">
+            <button onclick="confirmarUbicacion()" style="background: #00c6ff; color: white; border: none; padding: 0.8rem 1.5rem; border-radius: 25px; cursor: pointer; font-weight: 600; font-size: 0.9rem;">
+                Usar Esta Ubicación
+            </button>
+            <button onclick="cerrarMapa()" style="background: #666; color: white; border: none; padding: 0.8rem 1.5rem; border-radius: 25px; cursor: pointer; font-size: 0.9rem;">
+                Cancelar
+            </button>
+        </div>
+    </div>
+</div>
+
+        <section id="testimonios" class="testimonials" aria-label="Testimonios de usuarios">
+            <div class="testimonial-item active" tabindex="0">
+                <p class="testimonial-text">"Gracias a Transportadora Online, redujimos nuestros costos logísticos en un 30% y mejoramos la eficiencia operativa."</p>
+                <p class="testimonial-author">- Carlos Rodríguez, Director Logístico</p>
+            </div>
+            <div class="testimonial-item" tabindex="0">
+                <p class="testimonial-text">"La plataforma nos dio el control total sobre nuestras operaciones de transporte. Ahora gestionamos todo desde un solo lugar."</p>
+                <p class="testimonial-author">- Ana Martínez, Administradora</p>
+            </div>
+            <div class="testimonial-item" tabindex="0">
+                <p class="testimonial-text">"La seguridad que ofrece la plataforma nos permitió expandirnos a nuevas rutas con total confianza en nuestros envíos."</p>
+                <p class="testimonial-author">- Roberto González, Dueño de Empresa</p>
+            </div>
+            <div class="testimonial-controls" aria-label="Controles de testimonios">
+                <button class="testimonial-btn active" aria-label="Testimonio 1"></button>
+                <button class="testimonial-btn" aria-label="Testimonio 2"></button>
+                <button class="testimonial-btn" aria-label="Testimonio 3"></button>
+            </div>
+        </section>
+
+        <section id="faq" class="faq" aria-label="Preguntas frecuentes">
+            <div class="faq-item">
+                <button class="faq-question" aria-expanded="false">¿Cómo puedo registrar mi empresa?</button>
+                <div class="faq-answer" hidden>
+                    Puedes registrarte completando el formulario con los datos de tu empresa y nuestro equipo te contactará pronto.
+                </div>
+            </div>
+            <div class="faq-item">
+                <button class="faq-question" aria-expanded="false">¿Qué tipo de transportistas trabajan con ustedes?</button>
+                <div class="faq-answer" hidden>
+                    Contamos con transportistas independientes y flotas verificadas, garantizando seguridad y eficiencia.
+                </div>
+            </div>
+            <div class="faq-item">
+                <button class="faq-question" aria-expanded="false">¿La plataforma tiene soporte 24/7?</button>
+                <div class="faq-answer" hidden>
+                    Sí, nuestro equipo de soporte está disponible todos los días para ayudarte con cualquier consulta.
+                </div>
+            </div>
+        </section>
+
+        <section id="contacto" class="contacto" aria-label="Contacto">
+            <h2>Contáctanos</h2>
+            <p>¿Tienes dudas o quieres una demostración? Escríbenos y te responderemos rápido.</p>
+            <div class="social-icons" role="list">
+                <a href="https://facebook.com" target="_blank" rel="noopener" aria-label="Facebook" role="listitem">📘</a>
+                <a href="https://web.whatsapp.com/" target="_blank" rel="noopener" aria-label="Twitter" role="listitem">📱</a>
+                <a href="mailto:matirodas50@gmail.com" aria-label="Email contacto" role="listitem">✉️</a>
+            </div>
+            <div class="map-container">
+                <iframe
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3566.7433964691264!2d-57.56174062466653!3d-25.36165957761479!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x945da954279b5c1d%3A0xf784ee45297931d6!2sBolivia%20%26%20Venezuela%2C%20111440%20San%20Lorenzo%2C%20Paraguay!5e0!3m2!1ses-419!2spy!4v1717693705602!5m2!1ses-419!2spy"
+                    width="100%"
+                    height="450"
+                    style="border:0;"
+                    allowfullscreen=""
+                    loading="lazy"
+                    referrerpolicy="no-referrer-when-downgrade"
+                    aria-label="Ubicación en San Lorenzo">
+                </iframe>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        © 2026 Transportadora Online. Todos los derechos reservados.
+    </footer>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="inicio.js"></script>
+</body>
+</html>
