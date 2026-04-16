@@ -10,7 +10,7 @@ class TrackingService {
         this.empresaId = empresaId;
         const token = localStorage.getItem('adminToken');
         
-        this.socket = io('http://localhost:3000', {
+        this.socket = io('https://transportadoraonline-production.up.railway.app', {
             auth: { token },
             query: { token }
         });
