@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded', function() {
             empresaSelect.innerHTML = '<option value="">Cargando empresas...</option>';
             empresaSelect.disabled = true;
 
-            const response = await fetch('http://localhost:3000/api/auth/empresas-activas');
+            const response = await fetch('https://transportadoraonline-production.up.railway.app/api/auth/empresas-activas');
             console.log('📡 Respuesta de empresas-activas:', response.status);
             
             if (!response.ok) {
@@ -129,7 +129,7 @@ function validarContraseñas() {
 
         try {
             console.log('📡 Enviando petición a /registro-admin...');
-            const response = await fetch('http://localhost:3000/api/auth/registro-admin', {
+           const response = await fetch('https://transportadoraonline-production.up.railway.app/api/auth/registro-admin', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
