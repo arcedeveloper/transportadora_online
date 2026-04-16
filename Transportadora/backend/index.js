@@ -37,14 +37,14 @@ app.use(cors({
         if (!origin) return callback(null, true);
         
           const allowedOrigins = [
-            'http://127.0.0.1:5500',
-            'http://localhost:5500', 
-            'http://localhost:3000',
-            'http://127.0.0.1:3000',
-            'http://10.0.2.2:3000',
-            'http://192.168.100.9:3000',  
-            'http://192.168.100.9'       
-        ];
+    'http://127.0.0.1:5500',
+    'http://localhost:5500', 
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    'http://10.0.2.2:3000',
+    'https://arcedevolver.github.io',  // ← GitHub Pages
+    'https://transportadoraonline-production.up.railway.app'  // ← Railway frontend si aplica
+]
         
         if (allowedOrigins.indexOf(origin) !== -1) {
             callback(null, true);
