@@ -23,8 +23,8 @@ this.popupsPunta = {};
 
         this.transportistas = [];
         this.viajes = [];
-        this.BASE_URL = 'http://localhost:3000/api';
-        this.CHAT_URL = 'http://localhost:3000/api';
+        this.BASE_URL = 'https://transportadoraonline-production.up.railway.app/api';
+this.CHAT_URL = 'https://transportadoraonline-production.up.railway.app/api';
         this.transportistaChatSeleccionado = null;
         this.chatIdActual = null;
         this.socket = null;
@@ -639,7 +639,7 @@ actualizarMetricasUI({
 
         console.log('🔌 Conectando WebSocket con token:', token.substring(0, 20) + '...');
         
-        this.socket = io('http://localhost:3000', {
+        this.socket = io('https://transportadoraonline-production.up.railway.app', {
             auth: { 
                 token: token 
             },
