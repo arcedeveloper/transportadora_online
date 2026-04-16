@@ -250,7 +250,7 @@ async function cargarDashboard() {
 
 async function calcularIngresosNetosReales() {
     try {
-        console.log('💰 Calculando ingresos netos EXACTOS...');
+        console.log('💰 Calculando ingresos netos EXACTOS (igual que empresa)...');
 
         const pedidosData = await fetchData(`${API_BASE}/pedidos`);
         if (!pedidosData || !pedidosData.success) {
@@ -262,7 +262,8 @@ async function calcularIngresosNetosReales() {
         console.log('📦 Total de pedidos:', todosLosPedidos.length);
 
         const pedidosEntregados = todosLosPedidos.filter(pedido => 
-            pedido.estado_envio === 'ENTREGADO' || pedido.estado === 'ENTREGADO'
+            pedido.estado_envio?.toUpperCase() === 'ENTREGADO' || 
+            pedido.estado?.toUpperCase() === 'ENTREGADO'
         );
 
         console.log(`✅ Pedidos ENTREGADOS: ${pedidosEntregados.length}`);
@@ -276,11 +277,10 @@ async function calcularIngresosNetosReales() {
         });
 
         console.log(`💰 INGRESOS BRUTOS TOTAL: ${ingresosBrutosTotal}`);
-
         let totalGastos = 0;
         const idsEnviosEntregados = pedidosEntregados
             .map(pedido => pedido.id_envio)
-            .filter(id => id && id !== 'null');
+            .filter(id => id && id !== 'null' && id !== 0);
 
         if (idsEnviosEntregados.length > 0) {
             try {
@@ -300,10 +300,12 @@ async function calcularIngresosNetosReales() {
                     const data = await response.json();
                     if (data.success && data.gastos_detallados) {
                         Object.values(data.gastos_detallados).forEach(gastosArray => {
-                            gastosArray.forEach(gasto => {
-                                const monto = parseFloat(gasto.monto) || 0;
-                                totalGastos += monto;
-                            });
+                            if (Array.isArray(gastosArray)) {
+                                gastosArray.forEach(gasto => {
+                                    const monto = parseFloat(gasto.monto) || 0;
+                                    totalGastos += monto;
+                                });
+                            }
                         });
                     }
                 }
@@ -316,9 +318,10 @@ async function calcularIngresosNetosReales() {
         console.log('🎯 RESUMEN FINAL EXACTO:');
         console.log(`📈 Ingresos brutos: ${ingresosBrutosTotal}`);
         console.log(`💸 Total gastos: ${totalGastos}`);
+        console.log(`💰 70% de ingresos brutos: ${ingresosBrutosTotal * 0.7}`);
         console.log(`📊 INGRESO NETO EMPRESA (70% - gastos): ${ingresoNetoEmpresa}`);
 
-        return ingresoNetoEmpresa; 
+        return ingresoNetoEmpresa;
 
     } catch (error) {
         console.error('❌ Error calculando ingresos netos:', error);
