@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded', function() {
         submitBtn.textContent = 'Iniciando sesión...';
 
         try {
-            const response = await fetch('http://localhost:3000/api/auth/login-admin', {
+          const response = await fetch('https://transportadoraonline-production.up.railway.app/api/auth/login-admin', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
