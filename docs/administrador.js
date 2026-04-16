@@ -58,7 +58,7 @@ if (!adminToken || !isAuthenticated) {
 }
 
 console.log('Usuario autenticado, token disponible');
-const API_BASE = 'http://localhost:3000/api/admin';
+const API_BASE = 'https://transportadoraonline-production.up.railway.app/api/admin';
 
 let currentTab = 'dashboard';
 let charts = {};
@@ -287,7 +287,7 @@ async function calcularIngresosNetosReales() {
                 const token = localStorage.getItem('adminToken');
                 const empresaId = getEmpresaId();
                 
-                const response = await fetch(`http://localhost:3000/api/empresas/${empresaId}/gastos-detallados`, {
+                const response = await fetch(`https://transportadoraonline-production.up.railway.app/api/empresas/${empresaId}/gastos-detallados`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -483,7 +483,7 @@ async function cargarEmpresasParaTransportista() {
     try {
         console.log('🏢 Cargando empresas disponibles...');
         
-        const response = await fetch('http://localhost:3000/api/auth/empresas-activas');
+        const response = await fetch('https://transportadoraonline-production.up.railway.app/api/auth/empresas-activas');
         
         if (!response.ok) {
             throw new Error(`Error HTTP: ${response.status}`);
