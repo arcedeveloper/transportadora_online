@@ -118,12 +118,21 @@ const authMiddleware = async (req, res, next) => {
 
 const checkRole = (role) => {
     return (req, res, next) => {
-        if (!req.user || req.user.rol !== role) {
-            return res.status(403).json({ 
+        if (!req.user) {
+            return res.status(401).json({ 
                 success: false,
-                message: 'Acceso denegado. No tienes los permisos necesarios.' 
+                message: 'No autenticado.' 
             });
         }
+        const isAdmin = req.user.id_rol === 1;
+        
+        if (role === 'Administrador' && !isAdmin) {
+            return res.status(403).json({ 
+                success: false,
+                message: 'Acceso denegado. Se requieren permisos de administrador.' 
+            });
+        }
+        
         next();
     };
 };
