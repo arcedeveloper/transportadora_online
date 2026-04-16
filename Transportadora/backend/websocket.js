@@ -7,10 +7,18 @@ let io;
 const setupWebSocket = (server) => {
     io = new Server(server, {
         cors: {
-            origin: ["http://127.0.0.1:5500", "http://localhost:5500", "http://localhost:3000", "http://192.168.100.9:3000", "http://192.168.100.9"],
-            methods: ["GET", "POST"],
-            credentials: true
-        }
+    origin: [
+        "http://127.0.0.1:5500",
+        "http://localhost:5500", 
+        "http://localhost:3000",
+        "http://192.168.100.9:3000",
+        "http://192.168.100.9",
+        "https://arcedevolver.github.io",
+        "https://transportadoraonline-production.up.railway.app"
+    ],
+    methods: ["GET", "POST"],
+    credentials: true
+}
     });
 
     io.use((socket, next) => {
