@@ -227,6 +227,26 @@ const setupWebSocket = (server) => {
                 return;
             }
 
+            // 🔥 Buscar nombre del transportista si no viene
+            let transportistaNombre = data.transportistaNombre;
+            if (!transportistaNombre && data.transportistaId) {
+                try {
+                    const [transportistas] = await pool.query(
+                        'SELECT nombre FROM transportistas WHERE id_transportista = ?',
+                        [data.transportistaId]
+                    );
+                    if (transportistas.length > 0) {
+                        transportistaNombre = transportistas[0].nombre;
+                        console.log(`✅ Nombre encontrado en BD para ubicación: "${transportistaNombre}"`);
+                    } else {
+                        transportistaNombre = `Transportista ${data.transportistaId}`;
+                    }
+                } catch (error) {
+                    console.error('Error buscando nombre:', error);
+                    transportistaNombre = `Transportista ${data.transportistaId}`;
+                }
+            }
+
             try {
                 let id_envio = data.envioId;
                 let id_pedido = data.pedidoId;
@@ -344,7 +364,7 @@ const setupWebSocket = (server) => {
                 
                 const ubicacionData = {
                     transportistaId: data.transportistaId,
-                    transportistaNombre: data.transportistaNombre,
+                    transportistaNombre: transportistaNombre,
                     empresaId: data.empresaId,
                     envioId: id_envio,
                     pedidoId: id_pedido,
@@ -376,7 +396,7 @@ const setupWebSocket = (server) => {
 
                 const ubicacionClienteData = {
                     transportistaId: data.transportistaId,
-                    transportistaNombre: data.transportistaNombre,
+                    transportistaNombre: transportistaNombre,
                     envioId: id_envio,
                     pedidoId: id_pedido,
                     latitud: data.latitud,
@@ -506,17 +526,47 @@ if (etapa.toLowerCase() === 'yendo_origen' ||
 
         socket.on('viaje-iniciado', async (data) => {
             console.log('🚀 VIAJE INICIADO VÍA WEBSOCKET:', {
-                transportista: data.transportistaNombre,
+                transportistaId: data.transportistaId,
+                transportistaNombre: data.transportistaNombre,
                 empresa: data.empresaId,
                 envio: data.envioId,
                 etapa: data.etapa
             });
 
+            // 🔥 BUSCAR EL NOMBRE DEL TRANSPORTISTA EN LA BASE DE DATOS
+            let transportistaNombre = data.transportistaNombre;
+            
+            if (!transportistaNombre && data.transportistaId) {
+                try {
+                    console.log(`🔍 Buscando nombre del transportista ID: ${data.transportistaId}`);
+                    const [transportistas] = await pool.query(
+                        'SELECT nombre FROM transportistas WHERE id_transportista = ?',
+                        [data.transportistaId]
+                    );
+                    
+                    if (transportistas.length > 0) {
+                        transportistaNombre = transportistas[0].nombre;
+                        console.log(`✅ Nombre encontrado en BD: "${transportistaNombre}"`);
+                    } else {
+                        transportistaNombre = `Transportista ${data.transportistaId}`;
+                        console.log(`⚠️ No se encontró transportista con ID: ${data.transportistaId}`);
+                    }
+                } catch (error) {
+                    console.error('❌ Error buscando nombre del transportista:', error);
+                    transportistaNombre = `Transportista ${data.transportistaId}`;
+                }
+            } else if (transportistaNombre) {
+                console.log(`✅ Nombre recibido directamente: "${transportistaNombre}"`);
+            } else {
+                transportistaNombre = 'Transportista';
+                console.log(`⚠️ No se pudo obtener el nombre del transportista`);
+            }
+
             const roomEmpresa = `tracking_empresa_${data.empresaId}`;
             
             io.to(roomEmpresa).emit('transportista-en-viaje', {
                 transportistaId: data.transportistaId,
-                transportistaNombre: data.transportistaNombre,
+                transportistaNombre: transportistaNombre,  
                 empresaId: data.empresaId,
                 envioId: data.envioId,
                 pedidoId: data.pedidoId,
@@ -524,6 +574,7 @@ if (etapa.toLowerCase() === 'yendo_origen' ||
                 timestamp: new Date(),
                 accion: 'inicio_viaje'
             });
+            
             if (data.tipo === 'llegada_origen') {
                 console.log(`📍 Notificando llegada al origen - Envío: ${data.envioId}, Pedido: ${data.pedidoId}`);
                 
@@ -531,24 +582,26 @@ if (etapa.toLowerCase() === 'yendo_origen' ||
                     envioId: data.envioId,
                     pedidoId: data.pedidoId,
                     transportistaId: data.transportistaId,
+                    transportistaNombre: transportistaNombre,
                     timestamp: new Date(),
-                    mensaje: 'El transportista llegó al punto de retiro'
+                    mensaje: `El transportista ${transportistaNombre} llegó al punto de retiro`
                 };
                 
                 const salaEnvio = `envio_tracking_${data.envioId}`;
                 const salaPedido = `envio_tracking_${data.pedidoId}`;
                 io.to(salaEnvio).emit('transportista-llego-origen', llegadaData);
+                
                 if (data.etapa && data.etapa.toLowerCase() === 'en_origen') {
                     console.log(`Notificando al cliente llegada al origen`);
                     io.to(salaPedido).emit('transportista-llego-origen', llegadaData);
                 } else {
-                    console.log(`⏭️  Omitiendo notificación para cliente - Etapa: ${data.etapa}`);
+                    console.log(`⏭️ Omitiendo notificación para cliente - Etapa: ${data.etapa}`);
                 }
                 
                 console.log(`📢 Notificado llegada a salas: ${salaEnvio} y ${salaPedido}`);
             }
 
-            console.log(`📢 Empresa ${data.empresaId} notificada sobre inicio de viaje`);
+            console.log(`📢 Empresa ${data.empresaId} notificada: ${transportistaNombre} inició viaje`);
         });
 
         socket.on('viaje-completado', async (data) => {
