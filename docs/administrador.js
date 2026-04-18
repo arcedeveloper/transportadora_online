@@ -251,7 +251,6 @@ async function cargarDashboard() {
 async function calcularIngresosNetosReales() {
     try {
         console.log('💰 Calculando ingresos netos EXACTOS (igual que empresa)...');
-
         const pedidosData = await fetchData(`${API_BASE}/pedidos`);
         if (!pedidosData || !pedidosData.success) {
             console.log('❌ No se pudieron cargar los pedidos');
@@ -259,7 +258,7 @@ async function calcularIngresosNetosReales() {
         }
 
         const todosLosPedidos = pedidosData.pedidos || [];
-        console.log('📦 Total de pedidos:', todosLosPedidos.length);
+        console.log(`📦 Total de pedidos: ${todosLosPedidos.length}`);
 
         const pedidosEntregados = todosLosPedidos.filter(pedido => 
             pedido.estado_envio?.toUpperCase() === 'ENTREGADO' || 
@@ -277,6 +276,7 @@ async function calcularIngresosNetosReales() {
         });
 
         console.log(`💰 INGRESOS BRUTOS TOTAL: ${ingresosBrutosTotal}`);
+        console.log(`💰 70% DE INGRESOS BRUTOS: ${ingresosBrutosTotal * 0.7}`);
         let totalGastos = 0;
         const idsEnviosEntregados = pedidosEntregados
             .map(pedido => pedido.id_envio)
@@ -310,15 +310,39 @@ async function calcularIngresosNetosReales() {
                     }
                 }
             } catch (error) {
-                console.error('❌ Error llamando endpoint de gastos:', error);
+                console.error('❌ Error llamando endpoint de gastos variables:', error);
             }
         }
+
+        try {
+            const token = localStorage.getItem('adminToken');
+            const empresaId = getEmpresaId();
+            const fecha = new Date();
+            const mes = fecha.getMonth() + 1;
+            const año = fecha.getFullYear();
+            
+            const response = await fetch(`https://transportadoraonline-production.up.railway.app/api/empresas/${empresaId}/gastos-fijos?mes=${mes}&año=${año}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                const gastosFijos = data.total_gastos_fijos || 0;
+                totalGastos += gastosFijos;
+                console.log(`💰 GASTOS FIJOS del mes: ${gastosFijos}`);
+            }
+        } catch (error) {
+            console.error('❌ Error cargando gastos fijos:', error);
+        }
+
+        console.log(`💸 TOTAL GASTOS (variables + fijos): ${totalGastos}`);
+
         const ingresoNetoEmpresa = (ingresosBrutosTotal * 0.7) - totalGastos;
 
         console.log('🎯 RESUMEN FINAL EXACTO:');
         console.log(`📈 Ingresos brutos: ${ingresosBrutosTotal}`);
-        console.log(`💸 Total gastos: ${totalGastos}`);
         console.log(`💰 70% de ingresos brutos: ${ingresosBrutosTotal * 0.7}`);
+        console.log(`💸 Total gastos: ${totalGastos}`);
         console.log(`📊 INGRESO NETO EMPRESA (70% - gastos): ${ingresoNetoEmpresa}`);
 
         return ingresoNetoEmpresa;
