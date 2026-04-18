@@ -79,7 +79,7 @@ loginForm.addEventListener('submit', async (e) => {
         
         // Guardar token si existe
         if (data.token) {
-            localStorage.setItem('adminToken', data.token);
+           localStorage.setItem('empresaToken', data.token);
             console.log('🔐 Token guardado en localStorage');
         }
         
