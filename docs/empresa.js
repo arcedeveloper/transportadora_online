@@ -168,22 +168,32 @@ this.CHAT_URL = 'https://transportadoraonline-production.up.railway.app/api';
         });
     }
 
-    async cargarDatosIniciales() {
-        try {
-            console.log('🚀 Cargando datos iniciales...');
-            
-            await Promise.all([
-                this.cargarTransportistas(),
-                this.cargarViajes()
-            ]);
-            
+async cargarDatosIniciales() {
+    try {
+        console.log('🚀 Cargando datos iniciales...');
+        
+        await Promise.all([
+            this.cargarTransportistas(),
+            this.cargarViajes()
+        ]);
+                if (this.viajes && this.viajes.length > 0) {
             await this.cargarMetricas();
-            
-        } catch (error) {
-            console.error('❌ Error cargando datos iniciales:', error);
-            this.mostrarError('Error cargando datos iniciales');
+        } else {
+            this.actualizarMetricasPorDefecto();
         }
+        
+    } catch (error) {
+        console.error('❌ Error cargando datos iniciales:', error);
+        this.mostrarError('Error cargando datos iniciales');
     }
+}
+actualizarMetricasPorDefecto() {
+    document.getElementById('freeCarriers').textContent = '0';
+    document.getElementById('activeTrips').textContent = '0';
+    document.getElementById('pendingTrips').textContent = '0';
+    document.getElementById('grossRevenue').textContent = 'Gs. 0';
+    document.getElementById('totalRevenue').textContent = 'Gs. 0';
+}
 
     async cargarTransportistas() {
         const container = document.getElementById('transportistas-container');
