@@ -192,7 +192,7 @@ this.CHAT_URL = 'https://transportadoraonline-production.up.railway.app/api';
         try {
             this.mostrarLoading(container, 'Cargando transportistas...');
             
-            const token = localStorage.getItem('adminToken');
+            const token = localStorage.getItem('empresaToken');
             if (!token) {
                 throw new Error('No hay token de autenticación');
             }
@@ -318,7 +318,7 @@ actualizarTituloPestana(cantidad) {
         try {
             this.mostrarLoading(container, 'Cargando envíos...');
             
-            const token = localStorage.getItem('adminToken');
+            const token = localStorage.getItem('empresaToken');
             if (!token) {
                 throw new Error('No hay token de autenticación');
             }
@@ -468,7 +468,7 @@ actualizarTituloPestana(cantidad) {
 
     async cargarMetricas() {
         try {
-            const token = localStorage.getItem('adminToken');
+            const token = localStorage.getItem('empresaToken');
             if (!token) {
                 await this.calcularMetricasLocales();
                 return;
@@ -631,7 +631,7 @@ actualizarMetricasUI({
 
     conectarWebSocket() {
     try {
-        const token = localStorage.getItem('adminToken');
+       const token = localStorage.getItem('empresaToken');
         if (!token) {
             console.error('❌ No hay token para conectar WebSocket');
             return;
@@ -976,7 +976,7 @@ actualizarPopupSiAbierto(transportistaId, nuevaPosicion) {
         if (!this.chatIdActual) return;
         
         try {
-            const token = localStorage.getItem('adminToken');
+            const token = localStorage.getItem('empresaToken');
             const response = await fetch(`${this.CHAT_URL}/chats/${this.chatIdActual}/mensajes/leer`, {
                 method: 'PUT',
                 headers: {
@@ -1012,7 +1012,7 @@ actualizarPopupSiAbierto(transportistaId, nuevaPosicion) {
 
     async cargarTransportistasParaChat() {
     try {
-        const token = localStorage.getItem('adminToken');
+       const token = localStorage.getItem('empresaToken');
         if (!token) {
             throw new Error('No hay token de autenticación');
         }
@@ -1234,7 +1234,7 @@ actualizarPopupSiAbierto(transportistaId, nuevaPosicion) {
 
     async crearOUnirseAlChat(transportistaId) {
         try {
-            const token = localStorage.getItem('adminToken');
+           const token = localStorage.getItem('empresaToken');
             const response = await fetch(`${this.CHAT_URL}/chats/crear`, {
                 method: 'POST',
                 headers: {
@@ -1264,7 +1264,7 @@ actualizarPopupSiAbierto(transportistaId, nuevaPosicion) {
 
     async obtenerChatExistente(transportistaId) {
         try {
-            const token = localStorage.getItem('adminToken');
+            const token = localStorage.getItem('empresaToken');
             const response = await fetch(`${this.CHAT_URL}/chats/empresa/${this.ID_EMPRESA}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -1297,7 +1297,7 @@ actualizarPopupSiAbierto(transportistaId, nuevaPosicion) {
         }
 
         try {
-            const token = localStorage.getItem('adminToken');
+            const token = localStorage.getItem('empresaToken');
             const response = await fetch(`${this.CHAT_URL}/chats/${this.chatIdActual}/mensajes`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -1592,7 +1592,7 @@ async enviarMensajeChat() {
 
 async cargarTracking() {
     try {
-        const token = localStorage.getItem('adminToken');
+       const token = localStorage.getItem('empresaToken');
         if (!token) {
             throw new Error('No hay token de autenticación');
         }
@@ -1710,7 +1710,7 @@ async cargarTracking() {
 
     async cargarUbicacionEmpresa() {
         try {
-            const token = localStorage.getItem('adminToken');
+           const token = localStorage.getItem('empresaToken');
             const response = await fetch(`${this.BASE_URL}/empresas/${this.ID_EMPRESA}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -2870,7 +2870,7 @@ centrarEnTransportista(transportistaId) {
 
     async cargarGastosPorEnvios(idsEnvios) {
         try {
-            const token = localStorage.getItem('adminToken');
+          const token = localStorage.getItem('empresaToken');
             if (!token) return {};
 
             const response = await fetch(`${this.BASE_URL}/empresas/${this.ID_EMPRESA}/gastos-envios`, {
@@ -2897,7 +2897,7 @@ centrarEnTransportista(transportistaId) {
 
   async cargarGastosDetalladosPorEnvios(idsEnvios) {
     try {
-        const token = localStorage.getItem('adminToken');
+        const token = localStorage.getItem('empresaToken');
         
         if (!idsEnvios || idsEnvios.length === 0) return {};
         const response = await fetch(`${this.BASE_URL}/empresas/${this.ID_EMPRESA}/gastos-detallados`, {
@@ -3802,7 +3802,7 @@ dividirTexto(texto, maxCaracteres) {
     
 async cargarGastosFijos() {
     try {
-        const token = localStorage.getItem('adminToken');
+       const token = localStorage.getItem('empresaToken');
         const fecha = new Date();
         const mes = fecha.getMonth() + 1;
         const año = fecha.getFullYear();
@@ -3846,7 +3846,7 @@ cerrarModalGasto() {
 
 async cargarGastosFijosEnModal() {
     try {
-        const token = localStorage.getItem('adminToken');
+      const token = localStorage.getItem('empresaToken');
         const fecha = new Date();
         const mes = fecha.getMonth() + 1;
         const año = fecha.getFullYear();
@@ -3948,7 +3948,7 @@ async agregarGastoFijoModal(event) {
     }
     
     try {
-        const token = localStorage.getItem('adminToken');
+        const token = localStorage.getItem('empresaToken');
         
         let url, method;
         if (idGasto) {
@@ -3989,7 +3989,7 @@ async agregarGastoFijoModal(event) {
 async eliminarGastoFijo(idGasto) {
     if (!confirm('¿Eliminar este gasto fijo?')) return;
     try {
-        const token = localStorage.getItem('adminToken');
+      const token = localStorage.getItem('empresaToken');
         const response = await fetch(`${this.BASE_URL}/empresas/${this.ID_EMPRESA}/gastos-fijos/${idGasto}`, {
             method: 'DELETE',
             headers: { 'Authorization': `Bearer ${token}` }
@@ -4009,7 +4009,7 @@ async eliminarGastoFijo(idGasto) {
 
 async editarGastoFijo(idGasto) {
     try {
-        const token = localStorage.getItem('adminToken');
+        const token = localStorage.getItem('empresaToken');
         const response = await fetch(`${this.BASE_URL}/empresas/${this.ID_EMPRESA}/gastos-fijos`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
