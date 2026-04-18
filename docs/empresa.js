@@ -2859,14 +2859,21 @@ centrarEnTransportista(transportistaId) {
         window.location.href = 'login.html';
     }
 
-    cerrarSesion() {
-        if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
-            this.detenerActualizacionAutomatica();
-            localStorage.clear();
-            if (this.socket) this.socket.disconnect();
-            window.location.href = 'login.html';
-        }
+ cerrarSesion() {
+    if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
+        this.detenerActualizacionAutomatica();
+                const empresaKeys = [
+            'empresaToken', 'empresa', 'empresa_id', 'nombre_empresa',
+            'correo_empresa', 'telefono_empresa', 'ciudad_empresa',
+            'nombre_titular', 'ruc_empresa', 'unreadCount', 'lastTransportista'
+        ];
+        
+        empresaKeys.forEach(key => localStorage.removeItem(key));
+        
+        if (this.socket) this.socket.disconnect();
+        window.location.href = 'login.html';
     }
+}
 
     async cargarGastosPorEnvios(idsEnvios) {
         try {
