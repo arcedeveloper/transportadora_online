@@ -814,7 +814,7 @@ this.socket.on('nuevo-mensaje', (data) => {
             
             if (data.empresaId == this.ID_EMPRESA) {
                 this.agregarTransportistaActivo(data);
-                this.mostrarNotificacion(`Transportista ${data.transportistaNombre} inició un viaje`);
+                this.mostrarNotificacion(`El Transportista ${data.transportistaNombre} inició un viaje`);
             }
         });
 
