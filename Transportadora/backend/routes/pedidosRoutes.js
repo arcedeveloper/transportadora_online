@@ -1219,19 +1219,23 @@ router.get('/transportista/:transportistaId/estadisticas', authMiddleware, async
     const { transportistaId } = req.params;
     
     try {
-        console.log('CALCULANDO ESTADÍSTICAS REALES PARA:', transportistaId);
+        console.log('CALCULANDO ESTADÍSTICAS PARA:', transportistaId);
+        
         const [viajes] = await pool.query(
             `SELECT COUNT(*) as total FROM envios 
              WHERE id_transportista = ? AND estado = 'ENTREGADO'`,
             [transportistaId]
         );
+        
         const [ingresos] = await pool.query(
             `SELECT SUM(p.costo * 0.3) as total FROM envios e
              JOIN pedidos p ON e.id_pedido = p.id_pedido
              WHERE e.id_transportista = ? AND e.estado = 'ENTREGADO'`,
             [transportistaId]
         );
+        
         let kmTotal = 0;
+        
         const [pedidos] = await pool.query(
             `SELECT DISTINCT u.id_pedido 
              FROM ubicaciones u
@@ -1240,10 +1244,11 @@ router.get('/transportista/:transportistaId/estadisticas', authMiddleware, async
             [transportistaId]
         );
         
-        console.log(`Procesando ${pedidos.length} pedidos para calcular KM reales...`);
+        console.log(`Procesando ${pedidos.length} pedidos...`);
+        
         for (const pedido of pedidos) {
             const [ubicaciones] = await pool.query(
-                `SELECT latitud, longitud 
+                `SELECT latitud, longitud, fecha 
                  FROM ubicaciones 
                  WHERE id_pedido = ? 
                  ORDER BY fecha ASC`,
@@ -1253,71 +1258,89 @@ router.get('/transportista/:transportistaId/estadisticas', authMiddleware, async
             if (ubicaciones.length < 2) continue;
             
             let kmPedido = 0;
-            for (let i = 1; i < ubicaciones.length; i++) {
-                const lat1 = parseFloat(ubicaciones[i-1].latitud);
-                const lon1 = parseFloat(ubicaciones[i-1].longitud);
-                const lat2 = parseFloat(ubicaciones[i].latitud);
-                const lon2 = parseFloat(ubicaciones[i].longitud);
-                const R = 6371;
-                const dLat = (lat2 - lat1) * Math.PI / 180;
-                const dLon = (lon2 - lon1) * Math.PI / 180;
-                const a = 
-                    Math.sin(dLat/2) * Math.sin(dLat/2) +
-                    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-                    Math.sin(dLon/2) * Math.sin(dLon/2);
-                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-                const distancia = R * c;
+            let ultimaLat = null;
+            let ultimaLng = null;
+            let ultimoTiempo = null;
+            
+            for (let i = 0; i < ubicaciones.length; i++) {
+                const lat = parseFloat(ubicaciones[i].latitud);
+                const lng = parseFloat(ubicaciones[i].longitud);
+                const fecha = new Date(ubicaciones[i].fecha);
                 
-                kmPedido += distancia;
+                if ((lat === 0 && lng === 0) || lat < -30 || lat > -20 || lng < -62 || lng > -54) {
+                    continue;
+                }
+                
+                if (ultimaLat !== null && ultimoTiempo !== null) {
+                    const diffTiempo = (fecha - ultimoTiempo) / 1000;
+                    
+                    if (diffTiempo >= 10) {
+                        const R = 6371;
+                        const lat1 = ultimaLat * Math.PI / 180;
+                        const lng1 = ultimaLng * Math.PI / 180;
+                        const lat2 = lat * Math.PI / 180;
+                        const lng2 = lng * Math.PI / 180;
+                        
+                        const dLat = lat2 - lat1;
+                        const dLng = lng2 - lng1;
+                        
+                        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                                 Math.cos(lat1) * Math.cos(lat2) *
+                                 Math.sin(dLng/2) * Math.sin(dLng/2);
+                        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+                        const distancia = R * c;
+                        
+                        if (distancia < 5) {
+                            kmPedido += distancia;
+                        }
+                    }
+                }
+                
+                ultimaLat = lat;
+                ultimaLng = lng;
+                ultimoTiempo = fecha;
             }
-            kmTotal += kmPedido;
+            
+            kmTotal += Math.round(kmPedido * 10) / 10;
         }
         
         const viajesCount = viajes[0]?.total || 0;
         const ingresosTotal = ingresos[0]?.total || 0;
+        const kmFinal = Math.round(kmTotal * 10) / 10;
         
-        console.log('RESULTADOS REALES:', {
+        console.log('RESULTADOS:', {
             viajes: viajesCount,
             ingresos: ingresosTotal,
-            km_estimados: viajesCount * 25,
-            km_reales: kmTotal.toFixed(2),
-            usando: kmTotal > 0 ? 'KM REALES' : 'KM ESTIMADOS'
+            km_reales: kmFinal
         });
-        const kmFinal = kmTotal > 0 ? kmTotal : (viajesCount * 25);
-
+        
         res.json({
             success: true,
             estadisticas: {
                 viajes_completados: viajesCount,
                 ingresos_totales: ingresosTotal,
-                km_recorridos: Math.round(kmFinal * 100) / 100 
+                km_recorridos: kmFinal > 0 ? kmFinal : (viajesCount * 25)
             }
         });
-
+        
     } catch (error) {
         console.error('ERROR:', error);
-        try {
-            const [viajes] = await pool.query(
-                `SELECT COUNT(*) as total FROM envios 
-                 WHERE id_transportista = ? AND estado = 'ENTREGADO'`,
-                [transportistaId]
-            );
-            const viajesCount = viajes[0]?.total || 0;
-            
-            res.json({
-                success: true,
-                estadisticas: {
-                    viajes_completados: viajesCount,
-                    ingresos_totales: 0,
-                    km_recorridos: viajesCount * 25
-                }
-            });
-        } catch (fallbackError) {
-            res.status(500).json({ 
-                success: false, 
-                message: error.message 
-            });
-        }
+        
+        const [viajes] = await pool.query(
+            `SELECT COUNT(*) as total FROM envios 
+             WHERE id_transportista = ? AND estado = 'ENTREGADO'`,
+            [transportistaId]
+        );
+        const viajesCount = viajes[0]?.total || 0;
+        
+        res.json({
+            success: true,
+            estadisticas: {
+                viajes_completados: viajesCount,
+                ingresos_totales: 0,
+                km_recorridos: viajesCount * 25
+            }
+        });
     }
 });
 router.put('/:envioId/finalizar', authMiddleware, async (req, res) => {
