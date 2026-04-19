@@ -1219,8 +1219,6 @@ router.get('/transportista/:transportistaId/estadisticas', authMiddleware, async
     const { transportistaId } = req.params;
     
     try {
-        console.log('CALCULANDO ESTADÍSTICAS PARA:', transportistaId);
-        
         const [viajes] = await pool.query(
             `SELECT COUNT(*) as total FROM envios 
              WHERE id_transportista = ? AND estado = 'ENTREGADO'`,
@@ -1244,8 +1242,6 @@ router.get('/transportista/:transportistaId/estadisticas', authMiddleware, async
             [transportistaId]
         );
         
-        console.log(`Procesando ${pedidos.length} pedidos...`);
-        
         for (const pedido of pedidos) {
             const [ubicaciones] = await pool.query(
                 `SELECT latitud, longitud, fecha 
@@ -1260,53 +1256,44 @@ router.get('/transportista/:transportistaId/estadisticas', authMiddleware, async
             let kmPedido = 0;
             let ultimaLat = null;
             let ultimaLng = null;
-            let ultimoTiempo = null;
             
             for (let i = 0; i < ubicaciones.length; i++) {
                 const lat = parseFloat(ubicaciones[i].latitud);
                 const lng = parseFloat(ubicaciones[i].longitud);
-                const fecha = new Date(ubicaciones[i].fecha);
                 
                 if ((lat === 0 && lng === 0) || lat < -30 || lat > -20 || lng < -62 || lng > -54) {
                     continue;
                 }
                 
-                if (ultimaLat !== null && ultimoTiempo !== null) {
-                    const diffTiempo = (fecha - ultimoTiempo) / 1000;
+                if (ultimaLat !== null) {
+                    const R = 6371;
+                    const lat1 = ultimaLat * Math.PI / 180;
+                    const lng1 = ultimaLng * Math.PI / 180;
+                    const lat2 = lat * Math.PI / 180;
+                    const lng2 = lng * Math.PI / 180;
                     
-                    if (diffTiempo >= 10) {
-                        const R = 6371;
-                        const lat1 = ultimaLat * Math.PI / 180;
-                        const lng1 = ultimaLng * Math.PI / 180;
-                        const lat2 = lat * Math.PI / 180;
-                        const lng2 = lng * Math.PI / 180;
-                        
-                        const dLat = lat2 - lat1;
-                        const dLng = lng2 - lng1;
-                        
-                        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                                 Math.cos(lat1) * Math.cos(lat2) *
-                                 Math.sin(dLng/2) * Math.sin(dLng/2);
-                        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-                        const distancia = R * c;
-                        
-                        if (distancia < 5) {
-                            kmPedido += distancia;
-                        }
-                    }
+                    const dLat = lat2 - lat1;
+                    const dLng = lng2 - lng1;
+                    
+                    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                             Math.cos(lat1) * Math.cos(lat2) *
+                             Math.sin(dLng/2) * Math.sin(dLng/2);
+                    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+                    const distancia = R * c;
+                    
+                    kmPedido += distancia;
                 }
                 
                 ultimaLat = lat;
                 ultimaLng = lng;
-                ultimoTiempo = fecha;
             }
             
-            kmTotal += Math.round(kmPedido * 10) / 10;
+            kmTotal += kmPedido;
         }
         
         const viajesCount = viajes[0]?.total || 0;
         const ingresosTotal = ingresos[0]?.total || 0;
-        const kmFinal = Math.round(kmTotal * 10) / 10;
+        const kmFinal = Math.round(kmTotal);
         
         console.log('RESULTADOS:', {
             viajes: viajesCount,
