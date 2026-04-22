@@ -604,55 +604,134 @@ if (etapa.toLowerCase() === 'yendo_origen' ||
             console.log(`📢 Empresa ${data.empresaId} notificada: ${transportistaNombre} inició viaje`);
         });
 
-        socket.on('viaje-completado', async (data) => {
-            console.log('✅ VIAJE COMPLETADO VÍA WEBSOCKET:', {
-                transportista: data.transportistaId,
-                empresa: data.empresaId,
-                envio: data.envioId,
-                pedido: data.pedidoId 
-            });
-
-            try {
-                await pool.query(
-                    'UPDATE envios SET estado = ? WHERE id_envio = ?',
-                    ['ENTREGADO', data.envioId]
-                );
-
-                await pool.query(
-                    'UPDATE transportistas SET estado = ? WHERE id_transportista = ?',
-                    ['Libre', data.transportistaId]
-                );
-
-                const roomEmpresa = `tracking_empresa_${data.empresaId}`;
-                
-                io.to(roomEmpresa).emit('transportista-viaje-completado', {
-                    transportistaId: data.transportistaId,
-                    empresaId: data.empresaId,
-                    envioId: data.envioId,
-                    pedidoId: data.pedidoId,
-                    timestamp: new Date(),
-                    accion: 'viaje_completado',
-                    mensaje: `Envío ${data.envioId} marcado como entregado`
-                });
-                const salaEnvio = `envio_tracking_${data.envioId}`;
-                const salaPedido = `envio_tracking_${data.pedidoId}`;
-
-                const estadoData = {
-                    envioId: data.envioId,
-                    pedidoId: data.pedidoId,
-                    estado: 'ENTREGADO',
-                    timestamp: new Date(),
-                    mensaje: 'Pedido entregado exitosamente'
-                };
-                io.to(salaEnvio).emit('estado-envio-actualizado', estadoData);
-                io.to(salaPedido).emit('estado-envio-actualizado', estadoData);
-
-                console.log(`📢 Estado ENTREGADO emitido a salas: ${salaEnvio} y ${salaPedido}`);
-
-            } catch (error) {
-                console.error('Error actualizando estado de viaje completado:', error);
-            }
+      socket.on('viaje-completado', async (data) => {
+    console.log('=========================================');
+    console.log('✅ VIAJE COMPLETADO - DATOS RECIBIDOS:');
+    console.log(JSON.stringify(data, null, 2));
+    console.log('=========================================');
+    
+    if (!data.transportistaId) {
+        console.log('❌ ERROR: No llega transportistaId');
+        console.log('   - Campos recibidos:', Object.keys(data));
+        socket.emit('error-viaje', { 
+            success: false, 
+            message: 'transportistaId es requerido',
+            camposRecibidos: Object.keys(data)
         });
+        return;
+    }
+    
+    if (!data.envioId) {
+        console.log('❌ ERROR: No llega envioId');
+        socket.emit('error-viaje', { 
+            success: false, 
+            message: 'envioId es requerido' 
+        });
+        return;
+    }
+    
+    console.log('📦 Procesando viaje-completado:');
+    console.log(`   - transportistaId: ${data.transportistaId}`);
+    console.log(`   - envioId: ${data.envioId}`);
+    console.log(`   - empresaId: ${data.empresaId}`);
+    console.log(`   - pedidoId: ${data.pedidoId}`);
+
+    try {
+        const [transportista] = await pool.query(
+            'SELECT id_transportista, nombre FROM transportistas WHERE id_transportista = ?',
+            [data.transportistaId]
+        );
+        
+        if (transportista.length === 0) {
+            console.log(`❌ ERROR: Transportista ${data.transportistaId} NO EXISTE`);
+            socket.emit('error-viaje', { 
+                success: false, 
+                message: `Transportista ${data.transportistaId} no encontrado` 
+            });
+            return;
+        }
+        
+        console.log(`✅ Transportista encontrado: ${transportista[0].nombre}`);
+                const [envio] = await pool.query(
+            'SELECT id_envio, id_transportista FROM envios WHERE id_envio = ?',
+            [data.envioId]
+        );
+        
+        if (envio.length === 0) {
+            console.log(`❌ ERROR: Envío ${data.envioId} NO EXISTE`);
+            socket.emit('error-viaje', { 
+                success: false, 
+                message: `Envío ${data.envioId} no encontrado` 
+            });
+            return;
+        }
+        
+        if (envio[0].id_transportista != data.transportistaId) {
+            console.log(`❌ ERROR: El envío pertenece al transportista ${envio[0].id_transportista}, no a ${data.transportistaId}`);
+            socket.emit('error-viaje', { 
+                success: false, 
+                message: `Este envío no pertenece al transportista ${data.transportistaId}` 
+            });
+            return;
+        }
+            await pool.query(
+            'UPDATE envios SET estado = ? WHERE id_envio = ?',
+            ['ENTREGADO', data.envioId]
+        );
+        console.log(`✅ Envío ${data.envioId} actualizado a ENTREGADO`);
+        await pool.query(
+            'UPDATE transportistas SET estado = ? WHERE id_transportista = ?',
+            ['Libre', data.transportistaId]
+        );
+        console.log(`✅ Transportista ${data.transportistaId} actualizado a Libre`);
+
+        const roomEmpresa = `tracking_empresa_${data.empresaId}`;
+        
+        io.to(roomEmpresa).emit('transportista-viaje-completado', {
+            transportistaId: data.transportistaId,
+            transportistaNombre: transportista[0].nombre,
+            empresaId: data.empresaId,
+            envioId: data.envioId,
+            pedidoId: data.pedidoId,
+            timestamp: new Date(),
+            accion: 'viaje_completado',
+            mensaje: `Envío ${data.envioId} marcado como entregado`
+        });
+        console.log(`📢 Notificado a empresa ${data.empresaId}`);
+        
+        const salaEnvio = `envio_tracking_${data.envioId}`;
+        const salaPedido = `envio_tracking_${data.pedidoId}`;
+
+        const estadoData = {
+            envioId: data.envioId,
+            pedidoId: data.pedidoId,
+            estado: 'ENTREGADO',
+            timestamp: new Date(),
+            mensaje: 'Pedido entregado exitosamente'
+        };
+        
+        io.to(salaEnvio).emit('estado-envio-actualizado', estadoData);
+        io.to(salaPedido).emit('estado-envio-actualizado', estadoData);
+
+        console.log(`📢 Estado ENTREGADO emitido a salas: ${salaEnvio} y ${salaPedido}`);
+                socket.emit('viaje-completado-confirmacion', {
+            success: true,
+            message: 'Viaje completado exitosamente',
+            envioId: data.envioId,
+            transportistaId: data.transportistaId
+        });
+
+        console.log('✅ VIAJE COMPLETADO - PROCESO EXITOSO');
+
+    } catch (error) {
+        console.error('❌ Error actualizando estado de viaje completado:', error);
+        socket.emit('error-viaje', { 
+            success: false, 
+            message: error.message,
+            error: error.toString()
+        });
+    }
+});
 
         socket.on('unirse-cliente-tracking', (data) => {
             console.log('🔍 CLIENTE INTENTANDO UNIRSE A TRACKING:');
