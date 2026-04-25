@@ -860,36 +860,37 @@ this.socket.on('nuevo-mensaje', (data) => {
 }
 
 procesarUbicacionEnTiempoReal(data) {
-    const { transportistaId, latitud, longitud, envioId } = data;
+    const { transportistaId, latitud, longitud, envioId, etapa, transportistaNombre } = data;
     
-    const viajeIndex = this.viajesActivos.findIndex(v => 
-        v.transportista && v.transportista.id == transportistaId
-    );
+    console.log(`📍📍📍 UBICACIÓN PROCESADA: ${transportistaNombre || transportistaId}`);
+    console.log(`   - Coordenadas: ${latitud}, ${longitud}`);
+    console.log(`   - Etapa: ${etapa}`);
     
-    if (viajeIndex !== -1) {
-        this.viajesActivos[viajeIndex].ubicacion = {
-            latitud: parseFloat(latitud),
-            longitud: parseFloat(longitud),
-            fecha: new Date(),
-            tipo: 'REAL',
-            esReal: true
-        };
-        
-        this.actualizarMarcadorEnMapa(transportistaId, latitud, longitud);
-        
-        const markerKey = `viaje_${transportistaId}`;
-        const marker = this.marcadores[markerKey] || this.marcadores[transportistaId];
-        
-        if (marker) {
-            marker.setLatLng([latitud, longitud]);
-        }
-        
+    const markerKey = `viaje_${transportistaId}`;
+    const marker = this.marcadores[markerKey] || this.marcadores[transportistaId];
+    
+    if (marker) {
+        marker.setLatLng([parseFloat(latitud), parseFloat(longitud)]);
+        console.log(`✅ Marcador actualizado para ${transportistaId}`);
     } else {
-        console.log(`⚠️ Transportista ${transportistaId} no encontrado en viajes activos`);
-        
+        console.log(`⚠️ Marcador no encontrado para ${transportistaId}, se creará en la próxima actualización`);
+    }
+        this.actualizarRutaHistorica(transportistaId, {
+        lat: parseFloat(latitud),
+        lng: parseFloat(longitud),
+        timestamp: new Date()
+    });
+    
+    this.dibujarRutaHistorica(transportistaId);
+    
+    if (document.getElementById('seccion-tracking')?.classList.contains('active')) {
+        this.actualizarTransportistaEnLista(data);
+    }
+    
+    if (!this.usuarioMoviendoMapa && !this.mapaCentrado) {
         setTimeout(() => {
-            this.cargarTracking();
-        }, 1000);
+            this.centrarMapaEnTodos();
+        }, 500);
     }
 }
 actualizarMarcadorEnMapa(transportistaId, latitud, longitud) {
@@ -2231,23 +2232,31 @@ posicionarPopupEnPunta(transportistaId, punto, popupElement) {
     }
 dibujarRutaHistorica(transportistaId) {
     const historico = this.historicoUbicaciones[transportistaId];
-    if (!historico || historico.length < 2) return;
+    
+    console.log(`🎨 DIBUJANDO LÍNEA para transportista ${transportistaId}`);
+    console.log(`   - Puntos en historial: ${historico?.length || 0}`);
+    
+    if (!historico || historico.length < 2) {
+        console.log(`   - No hay suficientes puntos (mínimo 2)`);
+        return;
+    }
         if (this.rutasHistoricas[transportistaId]) {
         this.mapa.removeLayer(this.rutasHistoricas[transportistaId]);
+        console.log(`   - Línea anterior eliminada`);
     }
-        const puntos = historico.map(p => [p.lat, p.lng]);
     
-    const rutaHistorica = L.polyline(puntos, {
-        color: '#3b82f6',
+    const puntos = historico.map(p => [p.lat, p.lng]);
+        const rutaHistorica = L.polyline(puntos, {
+        color: '#3b82f6',      
         weight: 4,
         opacity: 0.8,
         lineCap: 'round',
-        lineJoin: 'round',
-        className: 'ruta-historica'
+        lineJoin: 'round'
     }).addTo(this.mapa);
-        this.rutasHistoricas[transportistaId] = rutaHistorica;
     
-    console.log(`🛣️ Línea azul dibujada: ${transportistaId} - ${historico.length} puntos`);
+    this.rutasHistoricas[transportistaId] = rutaHistorica;
+    
+    console.log(`🛣️✅ LÍNEA AZUL DIBUJADA: ${transportistaId} - ${puntos.length} puntos`);
 }
 limpiarRutaHistorica(transportistaId) {
     if (this.rutasHistoricas[transportistaId]) {
