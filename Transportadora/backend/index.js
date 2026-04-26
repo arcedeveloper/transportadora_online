@@ -42,8 +42,8 @@ app.use(cors({
     'http://localhost:3000',
     'http://127.0.0.1:3000',
     'http://10.0.2.2:3000',
-    'https://arcedevolver.github.io',  // ← GitHub Pages
-    'https://transportadoraonline-production.up.railway.app'  // ← Railway frontend si aplica
+    'https://arcedevolver.github.io',  
+    'https://transportadoraonline-production.up.railway.app'  
 ]
         
         if (allowedOrigins.indexOf(origin) !== -1) {
