@@ -130,7 +130,7 @@ form.addEventListener('submit', async (e) => {
             feedback.style.color = '#00c6ff';
             feedback.textContent = 'Procesando registro...';
             
-           const response = await fetch('https://transportadoraonline-production.up.railway.app/api/auth/registro-empresa', {
+          const response = await fetch('https://transportadoraonline-production.up.railway.app/api/empresas/registro', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
