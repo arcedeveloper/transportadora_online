@@ -3,6 +3,88 @@ const router = express.Router();
 const pool = require("../models/database");
 const { authMiddleware } = require('../middleware/auth');
 
+router.post("/registro", async (req, res) => {
+    const {
+        nombre_empresa,
+        nombre_titular,
+        ruc,
+        ciudad,
+        correo_electronico,
+        contraseña,
+        telefono,
+        latitud,
+        longitud
+    } = req.body;
+
+    console.log('📝 Nueva empresa intentando registrarse:', { nombre_empresa, correo_electronico, ruc });
+
+    if (!nombre_empresa || !nombre_titular || !ruc || !correo_electronico || !contraseña) {
+        return res.status(400).json({
+            success: false,
+            message: 'Faltan campos obligatorios: nombre_empresa, nombre_titular, ruc, correo_electronico, contraseña'
+        });
+    }
+
+    try {
+        const [existeRuc] = await pool.execute(
+            'SELECT empresa_id FROM empresas WHERE ruc = ?',
+            [ruc]
+        );
+        
+        if (existeRuc.length > 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Ya existe una empresa registrada con este RUC'
+            });
+        }
+
+        const [existeCorreo] = await pool.execute(
+            'SELECT empresa_id FROM empresas WHERE correo_electronico = ?',
+            [correo_electronico]
+        );
+        
+        if (existeCorreo.length > 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Ya existe una empresa registrada con este correo electrónico'
+            });
+        }
+        const bcrypt = require('bcryptjs');
+        const hashedPassword = await bcrypt.hash(contraseña, 10);
+        const [result] = await pool.execute(
+            `INSERT INTO empresas 
+             (nombre_empresa, nombre_titular, ruc, ciudad, correo_electronico, 
+              contraseña, telefono, latitud, longitud, fecha, estado)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), 'activo')`,
+            [
+                nombre_empresa,
+                nombre_titular,
+                ruc,
+                ciudad || null,
+                correo_electronico,
+                hashedPassword,
+                telefono || null,
+                latitud || null,
+                longitud || null
+            ]
+        );
+
+        console.log(`✅ Empresa registrada exitosamente: ${nombre_empresa} (ID: ${result.insertId})`);
+
+        res.status(201).json({
+            success: true,
+            message: 'Empresa registrada exitosamente',
+            empresa_id: result.insertId
+        });
+
+    } catch (error) {
+        console.error('❌ Error registrando empresa:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error interno del servidor al registrar la empresa: ' + error.message
+        });
+    }
+});
 router.get("/public/mapa", async (req, res) => {
   try {
     console.log('📍 [PUBLICO] /empresas/public/mapa');
