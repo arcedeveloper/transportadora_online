@@ -914,12 +914,12 @@ app.post('/api/empresas/registro', async (req, res) => {
         longitud
     } = req.body;
 
-    console.log('📝 Registro empresa:', nombre_empresa);
+    console.log('📝 Registro empresa:', { nombre_empresa, correo_electronico, ruc });
 
     if (!nombre_empresa || !ruc || !correo_electronico || !contraseña) {
         return res.status(400).json({
             success: false,
-            message: 'Faltan campos obligatorios'
+            message: 'Faltan campos obligatorios: nombre_empresa, ruc, correo_electronico, contraseña'
         });
     }
 
@@ -944,7 +944,7 @@ app.post('/api/empresas/registro', async (req, res) => {
         if (existeCorreo.length > 0) {
             return res.status(400).json({
                 success: false,
-                message: 'Ya existe una empresa con este correo'
+                message: 'Ya existe una empresa con este correo electrónico'
             });
         }
 
@@ -954,8 +954,8 @@ app.post('/api/empresas/registro', async (req, res) => {
         const [result] = await pool.execute(
             `INSERT INTO empresas 
              (nombre_empresa, nombre_titular, ruc, ciudad, correo_electronico, 
-              contraseña, telefono, latitud, longitud, fecha, estado)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), 'activo')`,
+              contraseña, telefono, latitud, longitud, fecha)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
             [
                 nombre_empresa,
                 nombre_titular || null,
@@ -969,7 +969,7 @@ app.post('/api/empresas/registro', async (req, res) => {
             ]
         );
 
-        console.log(`✅ Empresa registrada ID: ${result.insertId}`);
+        console.log(`✅ Empresa registrada exitosamente. ID: ${result.insertId}`);
 
         res.status(201).json({
             success: true,
@@ -978,7 +978,7 @@ app.post('/api/empresas/registro', async (req, res) => {
         });
 
     } catch (error) {
-        console.error('❌ Error:', error);
+        console.error('❌ Error registrando empresa:', error);
         res.status(500).json({
             success: false,
             message: 'Error al registrar empresa: ' + error.message
